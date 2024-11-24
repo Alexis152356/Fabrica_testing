@@ -43,11 +43,12 @@ jobs:
     - name: Set up database environment variables
       run: |
         echo "DB_CONNECTION=mysql" >> .env
-        echo "DB_HOST=127.0.0.1" >> .env  # Cambiado a 127.0.0.1 ya que MySQL está en el servicio mysql
+        echo "DB_HOST=127.0.0.1" >> .env  # Cambiado a 127.0.0.1
         echo "DB_PORT=3306" >> .env
         echo "DB_DATABASE=fabrica_testing" >> .env
         echo "DB_USERNAME=root" >> .env
         echo "DB_PASSWORD=secret" >> .env
+
 
     - name: Generate Application Key
       run: php artisan key:generate
@@ -60,9 +61,17 @@ jobs:
 
     # 5. Esperar a que MySQL esté disponible
     - name: Wait for MySQL
-      run: dockerize -wait tcp://mysql:3306 -timeout 60s
+      run: dockerize -wait tcp://127.0.0.1:3306 -timeout 120s  # Aumenta el tiempo de espera a 120 segundos
+
 
     # 6. Ejecutar migraciones y pruebas
+    
+    - name: Check MySQL Connectivity
+      run: |
+        sleep 10  # Espera 10 segundos para dar tiempo a que MySQL esté completamente listo
+        docker exec fabrica_testing-mysql-1 mysql -u root -psecret -e "SHOW DATABASES;"  # Verifica si MySQL responde
+
+
     - name: Run Migrations
       run: php artisan migrate --env=testing --no-interaction --force
 
