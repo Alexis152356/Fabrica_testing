@@ -40,49 +40,50 @@ jobs:
     - name: Copy .env
       run: cp .env.example .env
 
-    # 4. Establecer las variables de entorno de la base de datos
     - name: Set up database environment variables
       run: |
         echo "DB_CONNECTION=mysql" >> .env
-        echo "DB_HOST=mysql" >> .env  # El nombre del servicio en Docker
+        echo "DB_HOST=127.0.0.1" >> .env  # Cambiado a 127.0.0.1 ya que MySQL está en el servicio mysql
         echo "DB_PORT=3306" >> .env
         echo "DB_DATABASE=fabrica_testing" >> .env
         echo "DB_USERNAME=root" >> .env
         echo "DB_PASSWORD=secret" >> .env
 
-    # 5. Esperar a que MySQL esté listo
-    - name: Wait for MySQL to be ready
-      run: |
-        dockerize -wait tcp://mysql:3306 -timeout 60s
-
-    # 6. Generar la clave de la aplicación
     - name: Generate Application Key
       run: php artisan key:generate
 
-    # 7. Ejecutar migraciones
+    # 4. Instalar dockerize
+    - name: Install dockerize
+      run: |
+        curl -sSL https://github.com/jwilder/dockerize/releases/download/v0.6.1/dockerize-linux-amd64-v0.6.1.tar.gz | tar -xzv
+        sudo mv dockerize /usr/local/bin/
+
+    # 5. Esperar a que MySQL esté disponible
+    - name: Wait for MySQL
+      run: dockerize -wait tcp://mysql:3306 -timeout 60s
+
+    # 6. Ejecutar migraciones y pruebas
     - name: Run Migrations
       run: php artisan migrate --env=testing --no-interaction --force
 
-    # 8. Ejecutar pruebas
     - name: Run Tests
       run: php artisan test --env=testing
 
-    # 9. Empaquetar aplicación
+    # 7. Empaquetar aplicación
     - name: Package Application
       run: zip -r laravel_app.zip .
 
-    # 10. Subir el artefacto
     - name: Upload Artifact
       uses: actions/upload-artifact@v3
       with:
         name: laravel_app
         path: laravel_app.zip
 
-    # 11. Construir la imagen Docker
+    # 8. Construir imagen Docker
     - name: Build Docker Image
       run: docker build -t laravel-app:latest .
 
-    # 12. Desplegar la imagen Docker localmente
+    # 9. Desplegar imagen Docker localmente
     - name: Run Docker Container
       run: |
         docker run -d -p 8080:80 --name laravel-app laravel-app:latest
