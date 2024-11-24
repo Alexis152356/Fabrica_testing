@@ -77,7 +77,8 @@
 <body>
 
 <div class="register-container">
-    <h1>Registro - Fábrica de Testing</h1>
+    <h1>Registro - Fabrica de Testing</h1>
+    <h1>Prueba</h1>
 
     <!-- Mostrar mensaje de éxito si el registro fue exitoso -->
     @if(session('status'))
