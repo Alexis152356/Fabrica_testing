@@ -3,9 +3,13 @@ FROM php:8.2-apache
 
 # Instalar dependencias necesarias
 RUN apt-get update && apt-get install -y \
-    libzip-dev \
+    curl \
     unzip \
+    libzip-dev \
     && docker-php-ext-install zip pdo_mysql
+
+# Instalar Dockerize para esperar que MySQL esté listo
+RUN curl -sSL https://github.com/jwilder/dockerize/releases/download/v0.6.1/dockerize-linux-amd64-v0.6.1.tar.gz | tar -C /usr/local/bin -xzv
 
 # Configurar el entorno de Laravel
 WORKDIR /var/www/html
