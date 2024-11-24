@@ -1,5 +1,12 @@
-- name: Set up Docker
-  uses: docker/setup-buildx-action@v2
+name: Laravel CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
   laravel-ci-cd:
@@ -29,14 +36,11 @@ jobs:
     - name: Install Composer Dependencies
       run: composer install --prefer-dist --no-progress --no-suggest
 
-    # 3. Configurar el entorno
-    - name: Copy .env
-      run: cp .env.example .env
-
+    # 3. Configurar el entorno de base de datos
     - name: Set up database environment variables
       run: |
         echo "DB_CONNECTION=mysql" >> .env
-        echo "DB_HOST=127.0.0.1" >> .env  # Cambiado a 127.0.0.1 ya que MySQL está en el servicio mysql
+        echo "DB_HOST=mysql" >> .env  # Cambiado a mysql para hacer referencia al servicio MySQL
         echo "DB_PORT=3306" >> .env
         echo "DB_DATABASE=fabrica_testing" >> .env
         echo "DB_USERNAME=root" >> .env
@@ -45,14 +49,20 @@ jobs:
     - name: Generate Application Key
       run: php artisan key:generate
 
-    # 4. Ejecutar migraciones y pruebas
+    # 4. Esperar a que MySQL esté listo
+    - name: Wait for MySQL to be ready
+      run: |
+        echo "Waiting for MySQL to be ready..."
+        sleep 15  # Espera 15 segundos para asegurarte de que MySQL está listo
+
+    # 5. Ejecutar migraciones y pruebas
     - name: Run Migrations
       run: php artisan migrate --env=testing --no-interaction --force
 
     - name: Run Tests
       run: php artisan test --env=testing
 
-    # 5. Empaquetar aplicación
+    # 6. Empaquetar aplicación
     - name: Package Application
       run: zip -r laravel_app.zip .
 
@@ -62,11 +72,11 @@ jobs:
         name: laravel_app
         path: laravel_app.zip
 
-    # 6. Construir imagen Docker
+    # 7. Construir imagen Docker
     - name: Build Docker Image
       run: docker build -t laravel-app:latest .
 
-    # 7. Desplegar imagen Docker localmente
+    # 8. Desplegar imagen Docker localmente
     - name: Run Docker Container
       run: |
         docker run -d -p 8080:80 --name laravel-app laravel-app:latest
