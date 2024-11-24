@@ -13,7 +13,7 @@ services:
       context: .
     environment:
       DB_CONNECTION: mysql
-      DB_HOST: 127.0.0.1   # Nombre del servicio mysql
+      DB_HOST: mysql   # Cambiado a mysql para hacer referencia al servicio MySQL
       DB_PORT: 3306
       DB_DATABASE: fabrica_testing
       DB_USERNAME: root
