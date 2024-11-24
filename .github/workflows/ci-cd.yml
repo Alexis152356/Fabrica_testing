@@ -1,16 +1,18 @@
-name: Laravel CI/CD Pipeline
-
-on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+- name: Set up Docker
+  uses: docker/setup-buildx-action@v2
 
 jobs:
   laravel-ci-cd:
     runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: secret
+          MYSQL_DATABASE: fabrica_testing
+        ports:
+          - 3306:3306
 
     steps:
     # 1. Clonar el repositorio
@@ -30,6 +32,15 @@ jobs:
     # 3. Configurar el entorno
     - name: Copy .env
       run: cp .env.example .env
+
+    - name: Set up database environment variables
+      run: |
+        echo "DB_CONNECTION=mysql" >> .env
+        echo "DB_HOST=127.0.0.1" >> .env  # Cambiado a 127.0.0.1 ya que MySQL está en el servicio mysql
+        echo "DB_PORT=3306" >> .env
+        echo "DB_DATABASE=fabrica_testing" >> .env
+        echo "DB_USERNAME=root" >> .env
+        echo "DB_PASSWORD=secret" >> .env
 
     - name: Generate Application Key
       run: php artisan key:generate
